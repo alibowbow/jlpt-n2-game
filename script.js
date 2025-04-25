@@ -70,6 +70,18 @@ function setupEventListeners() {
     document.getElementById('nextQuiz').addEventListener('click', showNextQuiz);
     document.getElementById('checkAnswer').addEventListener('click', checkWriteAnswer);
     document.getElementById('nextWriteQuiz').addEventListener('click', showNextWriteQuiz);
+    
+    // Enter 키로 정답 제출
+    document.getElementById('userAnswer').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const nextButton = document.getElementById('nextWriteQuiz');
+            if (!nextButton.classList.contains('hidden')) {
+                showNextWriteQuiz();
+            } else {
+                checkWriteAnswer();
+            }
+        }
+    });
 }
 
 // 학습 모드 함수
@@ -112,12 +124,12 @@ function showNextQuiz() {
     const correctWord = words[currentWordIndex];
     document.getElementById('quizWord').textContent = correctWord.japanese;
 
-    const answers = getRandomAnswers(correctWord.korean);
+    const answers = getRandomAnswers(correctWord);
     answers.forEach(answer => {
         const button = document.createElement('button');
-        button.textContent = answer;
+        button.textContent = answer.korean;
         button.classList.add('option');
-        button.addEventListener('click', () => checkAnswer(answer, correctWord.korean));
+        button.addEventListener('click', () => checkAnswer(button, answer.korean, correctWord));
         options.appendChild(button);
     });
 }
@@ -145,14 +157,15 @@ function showNextWriteQuiz() {
 function checkWriteAnswer() {
     const userAnswer = document.getElementById('userAnswer').value.trim();
     const correctAnswer = words[currentWordIndex].korean;
+    const reading = words[currentWordIndex].reading;
     const result = document.getElementById('writeResult');
 
     if (userAnswer === correctAnswer) {
-        result.textContent = '정답입니다!';
+        result.textContent = `정답입니다! (읽는 법: ${reading})`;
         result.style.color = '#4CAF50';
         score++;
     } else {
-        result.textContent = `틀렸습니다. 정답은 "${correctAnswer}" 입니다.`;
+        result.textContent = `틀렸습니다. 정답은 "${correctAnswer}" (읽는 법: ${reading}) 입니다.`;
         result.style.color = '#f44336';
     }
     totalQuestions++;
@@ -177,12 +190,15 @@ function updateWriteScore() {
     document.getElementById('writeTotalCount').textContent = totalQuestions;
 }
 
-function getRandomAnswers(correct) {
-    const answers = [correct];
+function getRandomAnswers(correctWord) {
+    const answers = [{ korean: correctWord.korean, reading: correctWord.reading }];
+    const usedWords = new Set([correctWord.korean]);
+    
     while (answers.length < 4) {
         const randomWord = words[Math.floor(Math.random() * words.length)];
-        if (!answers.includes(randomWord.korean)) {
-            answers.push(randomWord.korean);
+        if (!usedWords.has(randomWord.korean)) {
+            answers.push({ korean: randomWord.korean, reading: randomWord.reading });
+            usedWords.add(randomWord.korean);
         }
     }
     return shuffleArray(answers);
@@ -194,6 +210,33 @@ function shuffleArray(array) {
         [array[i], array[j]] = [array[j], array[i]];
     }
     return array;
+}
+
+function checkAnswer(buttonElement, selectedAnswer, correctWord) {
+    const options = document.querySelectorAll('.option');
+    const result = document.getElementById('result');
+    
+    options.forEach(option => option.disabled = true);
+    
+    if (selectedAnswer === correctWord.korean) {
+        buttonElement.style.backgroundColor = '#4CAF50';
+        result.innerHTML = `정답입니다!<br><span style="font-size: 0.9em; color: #666;">읽는 법: ${correctWord.reading}</span>`;
+        result.style.color = '#4CAF50';
+        score++;
+    } else {
+        buttonElement.style.backgroundColor = '#f44336';
+        options.forEach(option => {
+            if (option.textContent === correctWord.korean) {
+                option.style.backgroundColor = '#4CAF50';
+            }
+        });
+        result.innerHTML = `틀렸습니다.<br><span style="font-size: 0.9em; color: #666;">읽는 법: ${correctWord.reading}</span>`;
+        result.style.color = '#f44336';
+    }
+    
+    totalQuestions++;
+    updateScore();
+    document.getElementById('nextQuiz').classList.remove('hidden');
 }
 
 // 초기화
