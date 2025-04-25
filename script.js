@@ -1,142 +1,191 @@
 // DOM 요소
-const studyModeBtn = document.getElementById('studyMode');
-const quizModeBtn = document.getElementById('quizMode');
-const writeModeBtn = document.getElementById('writeMode');
-const studySection = document.getElementById('studySection');
-const quizSection = document.getElementById('quizSection');
-const writeSection = document.getElementById('writeSection');
-const wordJapanese = document.getElementById('wordJapanese');
-const wordReading = document.getElementById('wordReading');
-const wordKorean = document.getElementById('wordKorean');
-const nextWordBtn = document.getElementById('nextWord');
-const flipCardBtn = document.getElementById('flipCard');
-const card = document.querySelector('.card');
-const quizWord = document.getElementById('quizWord');
-const options = document.querySelectorAll('.option');
-const result = document.getElementById('result');
-const nextQuizBtn = document.getElementById('nextQuiz');
-const correctCount = document.getElementById('correctCount');
-const totalCount = document.getElementById('totalCount');
+document.addEventListener('DOMContentLoaded', () => {
+    // 메뉴 버튼 생성
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <div class="menu">
+            <button id="studyMode">학습 모드</button>
+            <button id="quizMode">객관식 퀴즈</button>
+            <button id="writeMode">주관식 퀴즈</button>
+        </div>
+        <div id="studySection" class="section">
+            <div class="card">
+                <div class="word-front">
+                    <h2 id="wordJapanese"></h2>
+                </div>
+                <div class="word-back hidden">
+                    <p id="wordReading"></p>
+                    <p id="wordKorean"></p>
+                </div>
+            </div>
+            <button id="nextWord">다음 단어</button>
+            <button id="flipCard">카드 뒤집기</button>
+        </div>
+        <div id="quizSection" class="section hidden">
+            <div class="quiz-container">
+                <h2 id="quizWord"></h2>
+                <div class="options"></div>
+                <p id="result"></p>
+                <button id="nextQuiz" class="hidden">다음 문제</button>
+            </div>
+            <div class="score">
+                맞은 개수: <span id="correctCount">0</span> / <span id="totalCount">0</span>
+            </div>
+        </div>
+        <div id="writeSection" class="section hidden">
+            <div class="write-container">
+                <h2 id="writeWord"></h2>
+                <div class="answer-input">
+                    <input type="text" id="userAnswer" placeholder="한글 뜻을 입력하세요">
+                    <button id="checkAnswer">정답 확인</button>
+                </div>
+                <p id="writeResult"></p>
+                <button id="nextWriteQuiz" class="hidden">다음 문제</button>
+            </div>
+            <div class="score">
+                맞은 개수: <span id="writeCorrectCount">0</span> / <span id="writeTotalCount">0</span>
+            </div>
+        </div>
+    `;
 
-// 주관식 퀴즈 요소
-const writeWord = document.getElementById('writeWord');
-const userAnswer = document.getElementById('userAnswer');
-const checkAnswerBtn = document.getElementById('checkAnswer');
-const writeResult = document.getElementById('writeResult');
-const correctAnswer = document.getElementById('correctAnswer');
-const nextWriteQuizBtn = document.getElementById('nextWriteQuiz');
-const writeCorrectCount = document.getElementById('writeCorrectCount');
-const writeTotalCount = document.getElementById('writeTotalCount');
+    // 이벤트 리스너 설정
+    setupEventListeners();
+    
+    // 초기 화면 설정
+    showStudyMode();
+});
 
 // 게임 상태
 let currentWordIndex = 0;
 let score = 0;
 let totalQuestions = 0;
-let currentQuizWord = null;
-let writeScore = 0;
-let writeTotalQuestions = 0;
 
-// 복습 시스템을 위한 변수들
-let usedWords = new Set(); // 이번 회차에 출제된 단어들
-let wrongWords = []; // 틀린 단어들과 그 회차 정보를 저장
-let currentTurn = 0; // 현재 회차
-
-// 모드 전환
-studyModeBtn.addEventListener('click', () => {
-    studySection.classList.remove('hidden');
-    quizSection.classList.add('hidden');
-    writeSection.classList.add('hidden');
-    // 복습 시스템 초기화
-    usedWords.clear();
-    wrongWords = [];
-    currentTurn = 0;
-    showWord();
-});
-
-quizModeBtn.addEventListener('click', () => {
-    studySection.classList.add('hidden');
-    quizSection.classList.remove('hidden');
-    writeSection.classList.add('hidden');
-    // 복습 시스템 초기화
-    usedWords.clear();
-    wrongWords = [];
-    currentTurn = 0;
-    startQuiz();
-});
-
-writeModeBtn.addEventListener('click', () => {
-    studySection.classList.add('hidden');
-    quizSection.classList.add('hidden');
-    writeSection.classList.remove('hidden');
-    // 복습 시스템 초기화
-    usedWords.clear();
-    wrongWords = [];
-    currentTurn = 0;
-    startWriteQuiz();
-});
-
-// 학습 모드 기능
-function showWord() {
-    const word = words[currentWordIndex];
-    wordJapanese.textContent = word.japanese;
-    wordReading.textContent = word.reading;
-    wordKorean.textContent = word.korean;
-    card.classList.remove('flipped');
+// 이벤트 리스너 설정
+function setupEventListeners() {
+    document.getElementById('studyMode').addEventListener('click', showStudyMode);
+    document.getElementById('quizMode').addEventListener('click', showQuizMode);
+    document.getElementById('writeMode').addEventListener('click', showWriteMode);
+    document.getElementById('nextWord').addEventListener('click', showNextWord);
+    document.getElementById('flipCard').addEventListener('click', flipCard);
+    document.getElementById('nextQuiz').addEventListener('click', showNextQuiz);
+    document.getElementById('checkAnswer').addEventListener('click', checkWriteAnswer);
+    document.getElementById('nextWriteQuiz').addEventListener('click', showNextWriteQuiz);
 }
 
-nextWordBtn.addEventListener('click', () => {
-    currentWordIndex = (currentWordIndex + 1) % words.length;
-    showWord();
-});
+// 학습 모드 함수
+function showStudyMode() {
+    hideAllSections();
+    document.getElementById('studySection').classList.remove('hidden');
+    showNextWord();
+}
 
-flipCardBtn.addEventListener('click', () => {
-    card.classList.toggle('flipped');
-});
+function showNextWord() {
+    currentWordIndex = Math.floor(Math.random() * words.length);
+    const word = words[currentWordIndex];
+    document.getElementById('wordJapanese').textContent = word.japanese;
+    document.getElementById('wordReading').textContent = word.reading;
+    document.getElementById('wordKorean').textContent = word.korean;
+    document.querySelector('.word-back').classList.add('hidden');
+}
 
-// 퀴즈 모드 기능
-function startQuiz() {
+function flipCard() {
+    document.querySelector('.word-back').classList.toggle('hidden');
+}
+
+// 객관식 퀴즈 모드 함수
+function showQuizMode() {
+    hideAllSections();
+    document.getElementById('quizSection').classList.remove('hidden');
     score = 0;
     totalQuestions = 0;
     updateScore();
-    showQuiz();
+    showNextQuiz();
 }
 
-function showQuiz() {
-    result.textContent = '';
-    nextQuizBtn.style.display = 'none';
-    
-    // 다음 단어 선택
-    currentQuizWord = getNextWord();
-    quizWord.textContent = currentQuizWord.japanese;
-    
-    // 보기 생성
-    const correctAnswer = `${currentQuizWord.reading} - ${currentQuizWord.korean}`;
-    const wrongAnswers = getRandomWrongAnswers(currentQuizWord);
-    const allAnswers = [correctAnswer, ...wrongAnswers];
-    shuffleArray(allAnswers);
-    
-    // 보기 표시
-    options.forEach((option, index) => {
-        option.textContent = allAnswers[index];
-        option.classList.remove('correct', 'wrong');
-        option.disabled = false;
+function showNextQuiz() {
+    const options = document.querySelector('.options');
+    options.innerHTML = '';
+    document.getElementById('result').textContent = '';
+    document.getElementById('nextQuiz').classList.add('hidden');
+
+    currentWordIndex = Math.floor(Math.random() * words.length);
+    const correctWord = words[currentWordIndex];
+    document.getElementById('quizWord').textContent = correctWord.japanese;
+
+    const answers = getRandomAnswers(correctWord.korean);
+    answers.forEach(answer => {
+        const button = document.createElement('button');
+        button.textContent = answer;
+        button.classList.add('option');
+        button.addEventListener('click', () => checkAnswer(answer, correctWord.korean));
+        options.appendChild(button);
     });
 }
 
-function getRandomWrongAnswers(correctWord) {
-    const wrongAnswers = [];
-    const availableWords = words.filter(word => word !== correctWord);
-    
-    while (wrongAnswers.length < 3) {
-        const randomIndex = Math.floor(Math.random() * availableWords.length);
-        const word = availableWords[randomIndex];
-        const answer = `${word.reading} - ${word.korean}`;
-        if (!wrongAnswers.includes(answer)) {
-            wrongAnswers.push(answer);
+// 주관식 퀴즈 모드 함수
+function showWriteMode() {
+    hideAllSections();
+    document.getElementById('writeSection').classList.remove('hidden');
+    score = 0;
+    totalQuestions = 0;
+    updateWriteScore();
+    showNextWriteQuiz();
+}
+
+function showNextWriteQuiz() {
+    currentWordIndex = Math.floor(Math.random() * words.length);
+    const word = words[currentWordIndex];
+    document.getElementById('writeWord').textContent = word.japanese;
+    document.getElementById('userAnswer').value = '';
+    document.getElementById('writeResult').textContent = '';
+    document.getElementById('nextWriteQuiz').classList.add('hidden');
+    document.getElementById('userAnswer').focus();
+}
+
+function checkWriteAnswer() {
+    const userAnswer = document.getElementById('userAnswer').value.trim();
+    const correctAnswer = words[currentWordIndex].korean;
+    const result = document.getElementById('writeResult');
+
+    if (userAnswer === correctAnswer) {
+        result.textContent = '정답입니다!';
+        result.style.color = '#4CAF50';
+        score++;
+    } else {
+        result.textContent = `틀렸습니다. 정답은 "${correctAnswer}" 입니다.`;
+        result.style.color = '#f44336';
+    }
+    totalQuestions++;
+    updateWriteScore();
+    document.getElementById('nextWriteQuiz').classList.remove('hidden');
+}
+
+// 유틸리티 함수
+function hideAllSections() {
+    document.getElementById('studySection').classList.add('hidden');
+    document.getElementById('quizSection').classList.add('hidden');
+    document.getElementById('writeSection').classList.add('hidden');
+}
+
+function updateScore() {
+    document.getElementById('correctCount').textContent = score;
+    document.getElementById('totalCount').textContent = totalQuestions;
+}
+
+function updateWriteScore() {
+    document.getElementById('writeCorrectCount').textContent = score;
+    document.getElementById('writeTotalCount').textContent = totalQuestions;
+}
+
+function getRandomAnswers(correct) {
+    const answers = [correct];
+    while (answers.length < 4) {
+        const randomWord = words[Math.floor(Math.random() * words.length)];
+        if (!answers.includes(randomWord.korean)) {
+            answers.push(randomWord.korean);
         }
     }
-    
-    return wrongAnswers;
+    return shuffleArray(answers);
 }
 
 function shuffleArray(array) {
@@ -144,147 +193,8 @@ function shuffleArray(array) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
     }
-}
-
-options.forEach(option => {
-    option.addEventListener('click', () => {
-        const selectedAnswer = option.textContent;
-        const correctAnswer = `${currentQuizWord.reading} - ${currentQuizWord.korean}`;
-        
-        options.forEach(opt => opt.disabled = true);
-        
-        if (selectedAnswer === correctAnswer) {
-            option.classList.add('correct');
-            result.textContent = '정답입니다!';
-            score++;
-        } else {
-            option.classList.add('wrong');
-            options.forEach(opt => {
-                if (opt.textContent === correctAnswer) {
-                    opt.classList.add('correct');
-                }
-            });
-            result.textContent = '틀렸습니다.';
-            // 틀린 단어 추가
-            addToWrongWords(currentQuizWord);
-        }
-        
-        totalQuestions++;
-        updateScore();
-        nextQuizBtn.style.display = 'block';
-    });
-});
-
-function updateScore() {
-    correctCount.textContent = score;
-    totalCount.textContent = totalQuestions;
-}
-
-nextQuizBtn.addEventListener('click', showQuiz);
-
-// 주관식 퀴즈 모드 기능
-function startWriteQuiz() {
-    writeScore = 0;
-    writeTotalQuestions = 0;
-    updateWriteScore();
-    showWriteQuiz();
-}
-
-function showWriteQuiz() {
-    writeResult.textContent = '';
-    writeResult.className = '';
-    correctAnswer.classList.add('hidden');
-    nextWriteQuizBtn.classList.add('hidden');
-    userAnswer.value = '';
-    userAnswer.disabled = false;
-    checkAnswerBtn.disabled = false;
-    
-    // 다음 단어 선택
-    currentQuizWord = getNextWord();
-    writeWord.textContent = currentQuizWord.japanese;
-}
-
-function checkAnswer() {
-    const userInput = userAnswer.value.trim();
-    const correctKorean = currentQuizWord.korean;
-    
-    userAnswer.disabled = true;
-    checkAnswerBtn.disabled = true;
-    
-    if (isCorrectAnswer(userInput, correctKorean)) {
-        writeResult.textContent = '정답입니다!';
-        writeResult.className = 'correct';
-        writeScore++;
-    } else {
-        writeResult.textContent = '틀렸습니다.';
-        writeResult.className = 'wrong';
-        correctAnswer.textContent = `정답: ${currentQuizWord.reading} - ${correctKorean}`;
-        correctAnswer.classList.remove('hidden');
-        // 틀린 단어 추가
-        addToWrongWords(currentQuizWord);
-    }
-    
-    writeTotalQuestions++;
-    updateWriteScore();
-    nextWriteQuizBtn.classList.remove('hidden');
-}
-
-function isCorrectAnswer(userInput, correctAnswer) {
-    // 쉼표로 구분된 여러 답안이 있는 경우를 처리
-    const correctAnswers = correctAnswer.split(',').map(answer => answer.trim());
-    return correctAnswers.some(answer => userInput === answer);
-}
-
-function updateWriteScore() {
-    writeCorrectCount.textContent = writeScore;
-    writeTotalCount.textContent = writeTotalQuestions;
-}
-
-// 이벤트 리스너 추가
-checkAnswerBtn.addEventListener('click', checkAnswer);
-nextWriteQuizBtn.addEventListener('click', showWriteQuiz);
-
-// Enter 키로 정답 제출
-userAnswer.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && !userAnswer.disabled) {
-        checkAnswer();
-    }
-});
-
-// 복습 시스템 함수들
-function addToWrongWords(word) {
-    wrongWords.push({
-        word: word,
-        turnMissed: currentTurn,
-        nextReview: currentTurn + 5 + Math.floor(Math.random() * 6) // 5~10턴 후에 재출제
-    });
-}
-
-function getNextWord() {
-    currentTurn++;
-    
-    // 복습할 단어가 있는지 확인
-    const reviewWord = wrongWords.find(w => w.nextReview === currentTurn);
-    if (reviewWord) {
-        // 복습 단어를 찾았으면 해당 단어를 반환하고 목록에서 제거
-        wrongWords = wrongWords.filter(w => w !== reviewWord);
-        return reviewWord.word;
-    }
-
-    // 아직 출제되지 않은 단어들 중에서 선택
-    const availableWords = words.filter(word => !usedWords.has(word));
-    
-    // 모든 단어가 출제되었다면 usedWords 초기화
-    if (availableWords.length === 0) {
-        usedWords.clear();
-        return words[Math.floor(Math.random() * words.length)];
-    }
-
-    // 랜덤하게 새로운 단어 선택
-    const randomWord = availableWords[Math.floor(Math.random() * availableWords.length)];
-    usedWords.add(randomWord);
-    return randomWord;
+    return array;
 }
 
 // 초기화
-showWord(); 
+showStudyMode(); 
