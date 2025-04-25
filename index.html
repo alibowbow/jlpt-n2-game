@@ -4,12 +4,61 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JLPT N2 단어 게임</title>
-    <script src="words.js"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>JLPT N2 단어 게임</h1>
     <div id="game-container">
-        <!-- 게임 콘텐츠가 여기에 표시됩니다 -->
+        <div class="menu">
+            <button id="studyMode">학습 모드</button>
+            <button id="quizMode">객관식 퀴즈</button>
+            <button id="writeMode">주관식 퀴즈</button>
+        </div>
+        <div id="studySection" class="section">
+            <div class="card">
+                <div class="word-front">
+                    <h2 id="wordJapanese"></h2>
+                </div>
+                <div class="word-back hidden">
+                    <p id="wordReading"></p>
+                    <p id="wordKorean"></p>
+                </div>
+            </div>
+            <button id="nextWord">다음 단어</button>
+            <button id="flipCard">카드 뒤집기</button>
+        </div>
+        <div id="quizSection" class="section hidden">
+            <div class="quiz-container">
+                <h2 id="quizWord"></h2>
+                <div class="options">
+                    <button class="option"></button>
+                    <button class="option"></button>
+                    <button class="option"></button>
+                    <button class="option"></button>
+                </div>
+                <p id="result"></p>
+                <button id="nextQuiz" class="hidden">다음 문제</button>
+            </div>
+            <div class="score">
+                맞은 개수: <span id="correctCount">0</span> / <span id="totalCount">0</span>
+            </div>
+        </div>
+        <div id="writeSection" class="section hidden">
+            <div class="write-container">
+                <h2 id="writeWord"></h2>
+                <div class="answer-input">
+                    <input type="text" id="userAnswer" placeholder="한글 뜻을 입력하세요">
+                    <button id="checkAnswer">정답 확인</button>
+                </div>
+                <p id="writeResult"></p>
+                <button id="nextWriteQuiz" class="hidden">다음 문제</button>
+            </div>
+            <div class="score">
+                맞은 개수: <span id="writeCorrectCount">0</span> / <span id="writeTotalCount">0</span>
+            </div>
+        </div>
     </div>
+    <script src="words.js"></script>
+    <script src="script.js"></script>
 </body>
 </html> 
